@@ -10,7 +10,10 @@ from security import SECRET_KEY, ALGORITHM
 from fastapi.security import OAuth2PasswordRequestForm
 from typing import List  
 from fastapi import FastAPI, HTTPException, Depends, status
-from fastapi.middleware.cors import CORSMiddleware  # <-- ADD THIS IMPORT
+from fastapi.middleware.cors import CORSMiddleware  
+import os 
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 app = FastAPI(title="Coffee Shop Analytics API")
 
@@ -28,19 +31,23 @@ DB_NAME = "ecommerce_db"
 DB_USER = "postgres"
 DB_PASS = "Vedansh1a@" 
 
+
 def get_db_connection():
-    """Builds a fresh connection to PostgreSQL every time someone asks for data."""
-    try:
-        conn = psycopg2.connect(
-            host=DB_HOST,
-            database=DB_NAME,
-            user=DB_USER,
-            password=DB_PASS
+    # 1. First, check if we are in the cloud and have a secret URL
+    database_url = os.getenv("DATABASE_URL")
+    
+    if database_url:
+        # We are in the cloud! Use the cloud URL.
+        return psycopg2.connect(database_url)
+    else:
+        # We are on your laptop! Fall back to the local database.
+        return psycopg2.connect(
+            dbname="ecommerce_db",
+            user="postgres",
+            password="Vedansh1a@", # Make sure this is your actual local password
+            host="localhost",
+            port="5432"
         )
-        return conn
-    except Exception as e:
-        print(f"Database connection failed: {e}")
-        return None
 
 # This tells FastAPI to look for the "Bearer" token in the Authorization header
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
