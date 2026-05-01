@@ -1,0 +1,307 @@
+/* --- Color Palette & Globals --- */
+:root {
+    --primary-brown: #4A3B32;
+    --light-cream: #FDFBF7;
+    --accent-gold: #C5A880;
+    --matcha-green: #6B8E23;
+    --text-dark: #2C2C2C;
+    --text-light: #7A7A7A;
+    --shadow: 0 10px 20px rgba(0,0,0,0.05);
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--light-cream);
+    color: var(--text-dark);
+    margin: 0;
+    padding: 0;
+}
+
+/* --- Hero Section --- */
+.hero {
+    background: linear-gradient(rgba(74, 59, 50, 0.8), rgba(74, 59, 50, 0.8)), url('https://images.unsplash.com/photo-1497935586351-b67a49e012bf?auto=format&fit=crop&w=1920&q=80') center/cover;
+    height: 350px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: white;
+}
+
+.hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 4rem;
+    margin: 0;
+    letter-spacing: 2px;
+    color: var(--accent-gold);
+}
+
+.hero p { font-size: 1.2rem; font-weight: 300; }
+
+/* --- Layout --- */
+.container {
+    max-width: 1200px;
+    margin: -40px auto 40px auto; /* Pulls content up over the hero image slightly */
+    display: flex;
+    gap: 30px;
+    padding: 0 20px;
+}
+
+.main-content { flex: 2.5; }
+.sidebar-wrapper { flex: 1; }
+
+/* Sticky Sidebar trick */
+.sidebar {
+    position: sticky;
+    top: 20px;
+}
+
+/* --- Product Grid & Cards --- */
+.section-title { font-family: 'Playfair Display', serif; 
+    font-size: 2.5rem;
+    margin-top: 20px; 
+    margin-bottom: 20px;
+    padding-top: 10px;
+}
+
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 25px;
+}
+
+.product-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.product-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+}
+
+.product-img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-bottom: 3px solid var(--accent-gold);
+}
+
+.product-info { padding: 20px; flex-grow: 1; display: flex; flex-direction: column;}
+.product-info h3 { margin: 0 0 10px 0; font-family: 'Playfair Display', serif; }
+.product-info p { color: var(--text-light); font-size: 0.9rem; flex-grow: 1;}
+.product-price { font-size: 1.4rem; font-weight: 600; color: var(--primary-brown); margin: 15px 0;}
+
+/* --- Sidebar Boxes --- */
+.auth-box, .cart-box {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    border-top: 5px solid var(--primary-brown);
+}
+
+.subtitle { color: var(--text-light); font-size: 0.9rem; margin-bottom: 20px;}
+
+/* --- Inputs & Buttons --- */
+input {
+    width: 100%; padding: 12px; margin-bottom: 15px;
+    border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+button {
+    width: 100%; padding: 14px; border: none; border-radius: 6px;
+    font-family: 'Poppins', sans-serif; font-weight: 600; cursor: pointer;
+    transition: background 0.3s;
+}
+
+.btn-primary { background: var(--primary-brown); color: white; }
+.btn-primary:hover { background: #352a23; }
+
+.btn-add { background: var(--accent-gold); color: white; margin-top: auto;}
+.btn-add:hover { background: #b0936b; }
+
+.btn-checkout { background: var(--matcha-green); color: white; margin-top: 15px;}
+.btn-checkout:hover { background: #55721c; }
+
+/* --- Cart Specifics --- */
+.cart-header { display: flex; justify-content: space-between; align-items: center; }
+.badge { background: var(--accent-gold); color: white; padding: 3px 10px; border-radius: 20px; font-size: 0.8rem;}
+.cart-item { display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px dashed #eee; padding-bottom: 8px; font-size: 0.9rem;}
+.empty-cart-msg { color: var(--text-light); font-style: italic; text-align: center; }
+.hidden { display: none; }
+
+/* Profile Section Styling */
+#profile-section {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 20px;
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    color: #f5f5f5;
+}
+
+.profile-header {
+    border-bottom: 1px solid #333;
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+}
+
+.order-card {
+    background-color: #2a2a2a;
+    border: 1px solid #444;
+    border-left: 4px solid #c0a080; /* Gold accent */
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid #333;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+}
+
+.order-date {
+    color: #aaa;
+    font-size: 0.9em;
+}
+
+#btn-profile, #btn-menu {
+    background: none;
+    border: 1px solid #c0a080;
+    color: #c0a080;
+    padding: 8px 15px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-left: 10px;
+}
+
+#btn-profile:hover, #btn-menu:hover {
+    background: #c0a080;
+    color: #121212;
+}
+
+/* =========================================
+   FOOTER STYLES
+   ========================================= */
+.site-footer {
+    background-color: #121212; /* Matches your dark theme */
+    color: #f5f5f5;
+    padding: 60px 20px 20px;
+    margin-top: 80px; /* Pushes the footer away from the main content */
+    border-top: 1px solid #333;
+}
+
+.footer-content {
+    display: flex;
+    flex-wrap: wrap; /* Allows columns to stack on mobile phones! */
+    justify-content: space-between;
+    max-width: 1100px;
+    margin: 0 auto;
+    gap: 40px;
+}
+
+.footer-section {
+    flex: 1;
+    min-width: 250px;
+}
+
+.footer-section h2 {
+    font-family: 'Playfair Display', serif;
+    color: #c0a080; /* Gold accent */
+    margin-bottom: 15px;
+}
+
+.footer-section h3 {
+    font-size: 1.2rem;
+    margin-bottom: 15px;
+    color: #c0a080;
+}
+
+.footer-section p {
+    line-height: 1.6;
+    margin-bottom: 10px;
+    color: #aaa;
+}
+
+/* Styling the links */
+.footer-section ul {
+    list-style: none;
+    padding: 0;
+}
+
+.footer-section ul li {
+    margin-bottom: 12px;
+}
+
+.footer-section ul li a {
+    color: #aaa;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.footer-section ul li a:hover {
+    color: #c0a080; /* Links turn gold when you hover over them */
+}
+
+/* The bottom copyright bar */
+.footer-bottom {
+    text-align: center;
+    padding-top: 20px;
+    margin-top: 40px;
+    border-top: 1px solid #333;
+    color: #666;
+    font-size: 0.9em;
+}
+/* =========================================
+   SEARCH BAR STYLES
+   ========================================= */
+.menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    margin-bottom: 30px;
+    flex-wrap: wrap; /* Allows it to stack nicely on mobile phones */
+    gap: 15px;
+}
+
+.menu-header .section-title {
+    margin: 0; /* Removes the old margins so it aligns with the search bar */
+}
+
+.search-container {
+    flex: 1;
+    max-width: 350px;
+}
+
+#search-bar {
+    width: 100%;
+    padding: 12px 15px;
+    border-radius: 25px;
+    border: 1px solid #444;
+    background-color: #2a2a2a;
+    color: #f5f5f5;
+    font-size: 1rem;
+    font-family: 'Poppins', sans-serif;
+    transition: all 0.3s ease;
+}
+
+#search-bar:focus {
+    outline: none;
+    border-color: #c0a080; /* Glows gold when clicked */
+    box-shadow: 0 0 8px rgba(192, 160, 128, 0.3);
+}
+
+#search-bar::placeholder {
+    color: #888;
+}

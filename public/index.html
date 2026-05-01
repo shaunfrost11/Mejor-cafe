@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mejor Cafe | Premium Roasts & Pastries</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☕</text></svg>">
+    <!-- Using the bulletproof paths we set up earlier! -->
+    <link rel="stylesheet" href="./css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <header class="hero">
+        <div class="hero-content">
+            <h1>Mejor Cafe</h1>
+            <p>Elevating your daily ritual. Discover premium roasts and artisanal desserts.</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <main class="main-content">
+            <!-- Replaced Header Section -->
+            <div class="menu-header">
+                <h2 class="section-title">Our Menu</h2>
+                <div class="search-container">
+                    <input type="text" id="search-bar" placeholder="🔍 Search coffees, pastries..." onkeyup="filterMenu()">
+                </div>
+            </div>
+            <div id="product-list" class="product-grid">
+                <!-- Javascript will inject coffees here -->
+            </div>
+
+            <!-- NEW: The Profile Section (Hidden by default) -->
+            <section id="profile-section" class="hidden">
+                <div class="profile-header">
+                    <h2>My Profile</h2>
+                    <p><strong>Account:</strong> <span id="profile-email"></span></p>
+                </div>
+            
+                <div class="orders-container">
+                    <h3>Order History</h3>
+                    <div id="order-history-list">
+                        <!-- JavaScript will inject the past orders right here -->
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <aside class="sidebar-wrapper">
+            <div class="sidebar">
+                
+                <!-- NEW: Navigation Buttons (Hidden until logged in) -->
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <button id="btn-profile" class="hidden" onclick="viewProfile()">👤 My Profile</button>
+                    <button id="btn-menu" class="hidden" onclick="viewMenu()">☕ Back to Menu</button>
+                </div>
+
+                <div id="login-section" class="auth-box">
+                    <h3>☕ Welcome Back</h3>
+                    <p class="subtitle">Log in to place an order</p>
+                    <input type="email" id="email" placeholder="Email Address" autocomplete="email">
+                    <input type="password" id="password" placeholder="Password" autocomplete="new-password">
+                    <button onclick="login()" class="btn-primary">Sign In</button>
+                    <p id="login-error" class="error-text"></p>
+                </div>
+
+                <div id="cart-section" class="cart-box hidden">
+                    <div class="cart-header">
+                        <h3>🛒 Your Tray</h3>
+                        <span class="badge" id="cart-count">0</span>
+                    </div>
+                    <hr>
+                    <div id="cart-items" class="cart-items-container">
+                        <p class="empty-cart-msg">Your tray is empty.</p>
+                    </div>
+                    <div class="cart-footer">
+                        <h4>Total: $<span id="cart-total">0.00</span></h4>
+                        <button onclick="checkout()" class="btn-checkout">Secure Checkout</button>
+                        <p id="checkout-message"></p>
+                    </div>
+                </div>
+
+            </div>
+        </aside>
+    </div>
+<!-- Add this right below the closing </div> of your container -->
+    <footer class="site-footer">
+        <div class="footer-content">
+            <!-- Column 1: Brand -->
+            <div class="footer-section brand">
+                <h2>Mejor Cafe</h2>
+                <p>Elevating your daily ritual with premium roasts, artisanal desserts, and unforgettable ambiance.</p>
+            </div>
+            
+            <!-- Column 2: Quick Links -->
+            <div class="footer-section links">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a href="#" onclick="viewMenu(); return false;">Our Menu</a></li>
+                    <li><a href="#" onclick="viewProfile(); return false;">My Profile</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Service</a></li>
+                </ul>
+            </div>
+            
+            <!-- Column 3: Contact Info -->
+            <div class="footer-section contact">
+                <h3>Contact Us</h3>
+                <p>📍 Koshi Colony, Purnia</p>
+                <p>📞 +91 9709641360</p>
+                <p>✉️ shaunfrost1107@gmail.com</p>
+            </div>
+        </div>
+        
+        <!-- Bottom Copyright -->
+        <div class="footer-bottom">
+            <p>&copy; 2026 Mejor Cafe. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Your script should be right here -->
+    <script src="./js/app.js"></script>
+</body>
+</html>
