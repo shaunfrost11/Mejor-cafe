@@ -53,23 +53,21 @@ function filterMenu() {
 
 // --- 2. AUTHENTICATION LOGIC (LOGIN & SIGNUP) ---
 
-// Toggle between Login and Signup forms
 function toggleAuthMode(mode) {
-    const loginForm = document.getElementById("login-form");
-    const signupForm = document.getElementById("signup-form");
+    const loginSection = document.getElementById("login-section");
+    const signupSection = document.getElementById("signup-section");
     const errorMsg = document.getElementById("login-error");
     
-    errorMsg.innerText = ""; // Clear errors
+    if (errorMsg) errorMsg.innerText = ""; 
 
     if (mode === 'signup') {
-        loginForm.classList.add("hidden");
-        signupForm.classList.remove("hidden");
+        loginSection.classList.add("hidden");
+        signupSection.classList.remove("hidden");
     } else {
-        signupForm.classList.add("hidden");
-        loginForm.classList.remove("hidden");
+        signupSection.classList.add("hidden");
+        loginSection.classList.remove("hidden");
     }
 }
-
 async function register() {
     const email = document.getElementById("signup-email").value;
     const password = document.getElementById("signup-password").value;
