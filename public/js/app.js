@@ -1,30 +1,24 @@
 const API_URL = "https://mejor-cafe.onrender.com";
 let cart = [];
 let token = null;
-
-// NEW: A global variable to hold our menu in memory for instant searching
 let allProducts = []; 
 
-// 1. Fetch Products from Database
+// --- 1. PRODUCT LOGIC ---
 async function loadProducts() {
     try {
         const response = await fetch(`${API_URL}/products`);
         const data = await response.json();
-        
-        allProducts = data.products; // Save the database response to our global variable
-        renderProducts(allProducts); // Draw all of them on the screen
-        
+        allProducts = data.products; 
+        renderProducts(allProducts); 
     } catch (error) {
         console.error("Failed to load products", error);
     }
 }
 
-// 2. Draw Products on the Screen (Separated for reuse!)
 function renderProducts(productsToDraw) {
     const productContainer = document.getElementById("product-list");
     productContainer.innerHTML = ""; 
     
-    // If the search finds nothing, show a friendly message
     if (productsToDraw.length === 0) {
         productContainer.innerHTML = "<p class='empty-cart-msg' style='grid-column: 1 / -1;'>No items found matching your search.</p>";
         return;
@@ -33,7 +27,6 @@ function renderProducts(productsToDraw) {
     productsToDraw.forEach(product => {
         const card = document.createElement("div");
         card.className = "product-card";
-        
         card.innerHTML = `
             <img src="${product.image_url}" alt="${product.name}" class="product-img">
             <div class="product-info">
@@ -49,30 +42,72 @@ function renderProducts(productsToDraw) {
     });
 }
 
-// 3. The Live Search Engine
 function filterMenu() {
-    // Grab what the user typed and make it lowercase
     const query = document.getElementById("search-bar").value.toLowerCase();
-    
-    // Filter the global array. Keep items where the name OR description matches the query!
     const filtered = allProducts.filter(product => 
         product.name.toLowerCase().includes(query) || 
         product.description.toLowerCase().includes(query)
     );
-    
-    // Instantly redraw the screen with the filtered items
     renderProducts(filtered);
 }
 
-// ... The rest of your app.js (login, addToCart, checkout, etc.) stays exactly the same!
+// --- 2. AUTHENTICATION LOGIC (LOGIN & SIGNUP) ---
 
-// 2. Handle Login
+// Toggle between Login and Signup forms
+function toggleAuthMode(mode) {
+    const loginForm = document.getElementById("login-form");
+    const signupForm = document.getElementById("signup-form");
+    const errorMsg = document.getElementById("login-error");
+    
+    errorMsg.innerText = ""; // Clear errors
+
+    if (mode === 'signup') {
+        loginForm.classList.add("hidden");
+        signupForm.classList.remove("hidden");
+    } else {
+        signupForm.classList.add("hidden");
+        loginForm.classList.remove("hidden");
+    }
+}
+
+async function register() {
+    const email = document.getElementById("signup-email").value;
+    const password = document.getElementById("signup-password").value;
+    const fullName = document.getElementById("signup-fullname").value;
+
+    const payload = {
+        email: email,
+        password: password,
+        full_name: fullName,
+        role: "customer" // Matches your backend requirement
+    };
+
+    try {
+        const response = await fetch(`${API_URL}/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            alert("Account created successfully! Please log in.");
+            toggleAuthMode('login');
+        } else {
+            document.getElementById("login-error").innerText = data.detail || "Registration failed.";
+        }
+    } catch (error) {
+        document.getElementById("login-error").innerText = "Cannot connect to server.";
+    }
+}
+
 async function login() {
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
     
     const formData = new URLSearchParams();
-    formData.append("username", email);
+    formData.append("username", email); // OAuth2 format uses 'username'
     formData.append("password", password);
 
     try {
@@ -86,11 +121,8 @@ async function login() {
             const data = await response.json();
             token = data.access_token;
             
-            // --- FIXED: PROFILE REVEAL LOGIC ADDED HERE ---
             document.getElementById("profile-email").innerText = email; 
             document.getElementById("btn-profile").classList.remove("hidden"); 
-            // ----------------------------------------------
-            
             document.getElementById("login-section").classList.add("hidden");
             document.getElementById("cart-section").classList.remove("hidden");
         } else {
@@ -101,7 +133,7 @@ async function login() {
     }
 }
 
-// 3. Handle Cart Logic
+// --- 3. CART & CHECKOUT LOGIC ---
 function addToCart(id, name, price) {
     if (!token) {
         alert("Please log in to start adding items to your tray!");
@@ -144,7 +176,6 @@ function updateCartUI() {
     cartCount.innerText = totalItems;
 }
 
-// 4. Handle Secure Checkout
 async function checkout() {
     if (cart.length === 0) return alert("Your tray is empty!");
 
@@ -153,7 +184,10 @@ async function checkout() {
     try {
         const response = await fetch(`${API_URL}/checkout`, {
             method: "POST",
-            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+            headers: { 
+                "Content-Type": "application/json", 
+                "Authorization": `Bearer ${token}` 
+            },
             body: JSON.stringify(payload)
         });
 
@@ -171,29 +205,23 @@ async function checkout() {
     }
 }
 
-// Switches the view back to the coffee menu
+// --- 4. VIEW LOGIC ---
 function viewMenu() {
     document.getElementById("profile-section").classList.add("hidden");
     document.getElementById("btn-menu").classList.add("hidden");
-    
     document.getElementById("product-list").classList.remove("hidden");
     document.getElementById("btn-profile").classList.remove("hidden");
 }
 
-// Switches to the profile view and fetches their specific orders
 async function viewProfile() {
-    // 1. Swap the UI
     document.getElementById("product-list").classList.add("hidden");
     document.getElementById("btn-profile").classList.add("hidden");
-    
     document.getElementById("profile-section").classList.remove("hidden");
     document.getElementById("btn-menu").classList.remove("hidden");
 
-    // 2. Fetch the orders from FastAPI
     try {
         const response = await fetch(`${API_URL}/my-orders`, {
             method: "GET",
-            // We pass the token exactly like we did in the checkout function!
             headers: { "Authorization": `Bearer ${token}` } 
         });
 
@@ -208,16 +236,13 @@ async function viewProfile() {
     }
 }
 
-// 3. Draw the orders on the screen
 function renderOrders(orders) {
     const container = document.getElementById("order-history-list");
-    
     if (orders.length === 0) {
         container.innerHTML = "<p class='empty-cart-msg'>You haven't placed any orders yet.</p>";
         return;
     }
 
-    // Loop through the database records and draw a receipt card for each one
     container.innerHTML = orders.map(order => `
         <div class="order-card">
             <div class="order-header">
@@ -232,5 +257,5 @@ function renderOrders(orders) {
     `).join('');
 }
 
-// 5. Initialize the engine!
+// Start
 loadProducts();
