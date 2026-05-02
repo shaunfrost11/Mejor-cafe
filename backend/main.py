@@ -289,14 +289,28 @@ import traceback # Add this at the top of your main.py if it isn't there
 @app.post("/checkout")
 def checkout(request: CheckoutRequest, current_user: dict = Depends(get_current_user)):
     """Processes a shopping cart, calculates totals securely, and creates an order."""
-    # Check if the user is a customer
     if current_user.get("role") != "customer":
         raise HTTPException(status_code=403, detail="Only customers can checkout.")
         
     conn = get_db_connection()
-    cursor = conn.cursor() # Removed RealDictCursor to avoid import crashes
+    cursor = conn.cursor() 
     
     try:
+        # --- THE FIX: GET THE REAL USER ID FROM THE DATABASE ---
+        # The token usually stores the user's email in the 'sub' field
+        user_email = current_user.get("sub") 
+        if not user_email:
+            raise ValueError("Invalid login token: No email found.")
+            
+        # Ask Neon for the real user_id based on this email
+        cursor.execute("SELECT user_id FROM users WHERE email = %s;", (user_email,))
+        db_user = cursor.fetchone()
+        if not db_user:
+            raise ValueError(f"User account not found for {user_email}.")
+            
+        real_user_id = db_user[0] # Here is the actual ID we need for the orders table!
+        # -------------------------------------------------------
+
         # Step 1: Calculate the true total and verify stock
         total_amount = 0
         verified_items = []
@@ -308,7 +322,6 @@ def checkout(request: CheckoutRequest, current_user: dict = Depends(get_current_
             if not product:
                 raise ValueError(f"Product {item.product_id} not found.")
             
-            # Since we are using standard cursor, we use indices: [0] is price, [1] is stock
             price = product[0]
             stock = product[1]
             
@@ -324,15 +337,12 @@ def checkout(request: CheckoutRequest, current_user: dict = Depends(get_current_
                 "unit_price": price
             })
 
-        # Securely get the user ID (handles cases where token uses 'id' instead of 'user_id')
-        user_id = current_user.get("user_id") or current_user.get("id")
-
-        # Step 2: Create the main Order record
+        # Step 2: Create the main Order record (using real_user_id)
         cursor.execute(
             "INSERT INTO orders (user_id, total_amount, status) VALUES (%s, %s, %s) RETURNING order_id;",
-            (user_id, total_amount, 'completed') 
+            (real_user_id, total_amount, 'completed') 
         )
-        new_order_id = cursor.fetchone()[0] # Tuple index [0] instead of dict key
+        new_order_id = cursor.fetchone()[0] 
         
         # Step 3: Insert all Order Items and deduct inventory stock
         for item in verified_items:
@@ -358,16 +368,12 @@ def checkout(request: CheckoutRequest, current_user: dict = Depends(get_current_
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         conn.rollback()
-        # THIS WILL FORCE RENDER TO PRINT THE EXACT ERROR LINE
-        print("\n" + "="*40, flush=True)
-        print("CRITICAL CHECKOUT ERROR:", flush=True)
-        traceback.print_exc() 
-        print("="*40 + "\n", flush=True)
+        print(f"DEBUG ERROR: {e}", flush=True) 
         raise HTTPException(status_code=500, detail="An internal error occurred during checkout.")
     finally:
         cursor.close()
         conn.close()
-        
+
 @app.get("/my-orders")
 def get_my_orders(current_user: dict = Depends(get_current_user)):
     """Returns a list of past orders for the logged-in customer."""
