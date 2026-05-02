@@ -284,14 +284,17 @@ class CartItem(BaseModel):
 class CheckoutRequest(BaseModel):
     items: List[CartItem]
 
+import traceback # Add this at the top of your main.py if it isn't there
+
 @app.post("/checkout")
 def checkout(request: CheckoutRequest, current_user: dict = Depends(get_current_user)):
     """Processes a shopping cart, calculates totals securely, and creates an order."""
-    if current_user["role"] != "customer":
+    # Check if the user is a customer
+    if current_user.get("role") != "customer":
         raise HTTPException(status_code=403, detail="Only customers can checkout.")
         
     conn = get_db_connection()
-    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    cursor = conn.cursor() # Removed RealDictCursor to avoid import crashes
     
     try:
         # Step 1: Calculate the true total and verify stock
@@ -304,24 +307,32 @@ def checkout(request: CheckoutRequest, current_user: dict = Depends(get_current_
             
             if not product:
                 raise ValueError(f"Product {item.product_id} not found.")
-            if product['stock_quantity'] < item.quantity:
+            
+            # Since we are using standard cursor, we use indices: [0] is price, [1] is stock
+            price = product[0]
+            stock = product[1]
+            
+            if stock < item.quantity:
                 raise ValueError(f"Not enough stock for product {item.product_id}.")
                 
-            item_total = product['price'] * item.quantity
+            item_total = price * item.quantity
             total_amount += item_total
             
             verified_items.append({
                 "product_id": item.product_id,
                 "quantity": item.quantity,
-                "unit_price": product['price']
+                "unit_price": price
             })
 
-        # Step 2: Create the main Order record (FIXED VARIABLES HERE)
+        # Securely get the user ID (handles cases where token uses 'id' instead of 'user_id')
+        user_id = current_user.get("user_id") or current_user.get("id")
+
+        # Step 2: Create the main Order record
         cursor.execute(
             "INSERT INTO orders (user_id, total_amount, status) VALUES (%s, %s, %s) RETURNING order_id;",
-            (current_user['user_id'], total_amount, 'completed') 
+            (user_id, total_amount, 'completed') 
         )
-        new_order_id = cursor.fetchone()['order_id']
+        new_order_id = cursor.fetchone()[0] # Tuple index [0] instead of dict key
         
         # Step 3: Insert all Order Items and deduct inventory stock
         for item in verified_items:
@@ -347,7 +358,11 @@ def checkout(request: CheckoutRequest, current_user: dict = Depends(get_current_
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         conn.rollback()
-        print(f"DEBUG ERROR: {e}") # This will print the exact reason to Render if it fails again
+        # THIS WILL FORCE RENDER TO PRINT THE EXACT ERROR LINE
+        print("\n" + "="*40, flush=True)
+        print("CRITICAL CHECKOUT ERROR:", flush=True)
+        traceback.print_exc() 
+        print("="*40 + "\n", flush=True)
         raise HTTPException(status_code=500, detail="An internal error occurred during checkout.")
     finally:
         cursor.close()
