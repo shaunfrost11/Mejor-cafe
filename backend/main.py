@@ -17,10 +17,17 @@ from psycopg2.extras import RealDictCursor
 
 app = FastAPI(title="Coffee Shop Analytics API")
 
+origins = [
+    "http://localhost",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://127.0.0.1:5500",  
+    "https://mejorcafe.netlify.app", 
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, you'd put your actual website URL here
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
