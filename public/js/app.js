@@ -1,4 +1,4 @@
-const API_URL = "https://mejor-cafe-backend.onrender.com";
+const API_URL = "https://mejor-cafe.onrender.com/";
 let cart = [];
 let token = null;
 
