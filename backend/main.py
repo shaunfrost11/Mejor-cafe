@@ -319,9 +319,8 @@ def checkout(request: CheckoutRequest, current_user: dict = Depends(get_current_
 
         # Step 2: Create the main Order record
         cursor.execute(
-            """INSERT INTO orders (customer_id, total_amount, status) 
-               VALUES (%s, %s, 'pending') RETURNING order_id;""",
-            (current_user["id"], total_amount)
+            "INSERT INTO orders (user_id, total_amount, status) VALUES (%s, %s, %s) RETURNING order_id;",
+            (current_user_id, total_price, 'completed')
         )
         new_order_id = cursor.fetchone()['order_id']
         
@@ -329,9 +328,8 @@ def checkout(request: CheckoutRequest, current_user: dict = Depends(get_current_
         for item in verified_items:
             # Add to order_items table
             cursor.execute(
-                """INSERT INTO order_items (order_id, product_id, quantity, unit_price) 
-                   VALUES (%s, %s, %s, %s);""",
-                (new_order_id, item['product_id'], item['quantity'], item['unit_price'])
+                "INSERT INTO order_items (order_id, product_id, quantity) VALUES (%s, %s, %s)",
+                (new_order_id, item['product_id'], item['quantity'])
             )
             # Deduct stock from products table
             cursor.execute(
