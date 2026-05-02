@@ -299,7 +299,6 @@ def checkout(request: CheckoutRequest, current_user: dict = Depends(get_current_
         verified_items = []
         
         for item in request.items:
-            # We fetch the exact price and stock directly from the database
             cursor.execute("SELECT price, stock_quantity FROM products WHERE product_id = %s;", (item.product_id,))
             product = cursor.fetchone()
             
@@ -317,27 +316,25 @@ def checkout(request: CheckoutRequest, current_user: dict = Depends(get_current_
                 "unit_price": product['price']
             })
 
-        # Step 2: Create the main Order record
+        # Step 2: Create the main Order record (FIXED VARIABLES HERE)
         cursor.execute(
             "INSERT INTO orders (user_id, total_amount, status) VALUES (%s, %s, %s) RETURNING order_id;",
-            (current_user_id, total_price, 'completed')
+            (current_user['user_id'], total_amount, 'completed') 
         )
         new_order_id = cursor.fetchone()['order_id']
         
         # Step 3: Insert all Order Items and deduct inventory stock
         for item in verified_items:
-            # Add to order_items table
             cursor.execute(
                 "INSERT INTO order_items (order_id, product_id, quantity) VALUES (%s, %s, %s)",
                 (new_order_id, item['product_id'], item['quantity'])
             )
-            # Deduct stock from products table
             cursor.execute(
                 "UPDATE products SET stock_quantity = stock_quantity - %s WHERE product_id = %s;",
                 (item['quantity'], item['product_id'])
             )
 
-        # Step 4: SUCCESS! Commit the transaction to save it permanently
+        # Step 4: SUCCESS! Commit the transaction
         conn.commit()
         return {
             "message": "Checkout successful!", 
@@ -346,16 +343,16 @@ def checkout(request: CheckoutRequest, current_user: dict = Depends(get_current_
         }
         
     except ValueError as ve:
-        # If stock is too low, we rollback so no partial order is saved
         conn.rollback()
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         conn.rollback()
+        print(f"DEBUG ERROR: {e}") # This will print the exact reason to Render if it fails again
         raise HTTPException(status_code=500, detail="An internal error occurred during checkout.")
     finally:
         cursor.close()
         conn.close()
-
+        
 @app.get("/my-orders")
 def get_my_orders(current_user: dict = Depends(get_current_user)):
     """Returns a list of past orders for the logged-in customer."""
