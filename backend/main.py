@@ -376,23 +376,41 @@ def checkout(request: CheckoutRequest, current_user: dict = Depends(get_current_
 
 @app.get("/my-orders")
 def get_my_orders(current_user: dict = Depends(get_current_user)):
-    """Returns a list of past orders for the logged-in customer."""
-    if current_user["role"] != "customer":
-        raise HTTPException(status_code=403, detail="Employees do not have order histories.")
-        
+    """Fetches the order history for the currently logged-in user."""
     conn = get_db_connection()
-    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    # We use RealDictCursor here so the frontend gets nice JSON objects
+    cursor = conn.cursor(cursor_factory=RealDictCursor) 
     
-    # Notice we use their token's ID so they can only see THEIR orders
-    cursor.execute("""
-        SELECT order_id, total_amount, status, created_at 
-        FROM orders 
-        WHERE customer_id = %s 
-        ORDER BY created_at DESC;
-    """, (current_user["id"],))
-    
-    orders = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    
-    return {"my_orders": orders}
+    try:
+        # 1. Get the real user_id based on the email in the token
+        user_email = current_user.get("sub")
+        if not user_email:
+            raise HTTPException(status_code=401, detail="Invalid token: no email.")
+
+        cursor.execute("SELECT user_id FROM users WHERE email = %s;", (user_email,))
+        db_user = cursor.fetchone()
+        
+        if not db_user:
+            raise HTTPException(status_code=404, detail="User not found.")
+            
+        real_user_id = db_user['user_id']
+
+        # 2. Fetch the orders using user_id (FIXED FROM customer_id)
+        cursor.execute("""
+            SELECT order_id, total_amount, status, created_at
+            FROM orders
+            WHERE user_id = %s
+            ORDER BY created_at DESC;
+        """, (real_user_id,))
+        
+        orders = cursor.fetchall()
+        
+        # 3. Return to the frontend
+        return {"my_orders": orders}
+        
+    except Exception as e:
+        print(f"DEBUG ERROR fetching orders: {e}", flush=True)
+        raise HTTPException(status_code=500, detail="Could not fetch orders.")
+    finally:
+        cursor.close()
+        conn.close()
