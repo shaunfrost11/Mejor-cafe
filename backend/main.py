@@ -298,7 +298,7 @@ def checkout(request: CheckoutRequest, current_user: dict = Depends(get_current_
     try:
         # --- THE FIX: GET THE REAL USER ID FROM THE DATABASE ---
         # The token usually stores the user's email in the 'sub' field
-        user_email = current_user.get("sub") 
+        user_email = current_user.get("sub") or current_user.get("email") or current_user.get("username") 
         if not user_email:
             raise ValueError("Invalid login token: No email found.")
             
@@ -383,7 +383,7 @@ def get_my_orders(current_user: dict = Depends(get_current_user)):
     
     try:
         # 1. Get the real user_id based on the email in the token
-        user_email = current_user.get("sub")
+        user_email = current_user.get("sub") or current_user.get("email") or current_user.get("username")
         if not user_email:
             raise HTTPException(status_code=401, detail="Invalid token: no email.")
 
