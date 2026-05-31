@@ -118,17 +118,39 @@ async function login() {
         if (response.ok) {
             const data = await response.json();
             token = data.access_token;
+            localStorage.setItem("token", token);
+            localStorage.setItem("email", email);
             
             document.getElementById("profile-email").innerText = email; 
             document.getElementById("btn-profile").classList.remove("hidden"); 
             document.getElementById("login-section").classList.add("hidden");
             document.getElementById("cart-section").classList.remove("hidden");
+            const logoutBtn = document.getElementById("btn-logout");
+            if (logoutBtn) logoutBtn.classList.remove("hidden");
         } else {
             document.getElementById("login-error").innerText = "Invalid credentials!";
         }
     } catch (error) {
         document.getElementById("login-error").innerText = "Cannot connect to server.";
     }
+}
+
+function logout() {
+    token = null;
+    localStorage.removeItem("token");
+    localStorage.removeItem("email");
+    cart = [];
+    updateCartUI();
+
+    document.getElementById("profile-email").innerText = "";
+    document.getElementById("btn-profile").classList.add("hidden");
+    document.getElementById("cart-section").classList.add("hidden");
+    document.getElementById("login-section").classList.remove("hidden");
+    
+    const logoutBtn = document.getElementById("btn-logout");
+    if (logoutBtn) logoutBtn.classList.add("hidden");
+
+    viewMenu(); // Make sure they are brought back to the menu view
 }
 
 // --- 3. CART & CHECKOUT LOGIC ---
@@ -256,4 +278,19 @@ function renderOrders(orders) {
 }
 
 // Start
+function checkLoginState() {
+    const savedToken = localStorage.getItem("token");
+    const savedEmail = localStorage.getItem("email");
+    
+    if (savedToken) {
+        token = savedToken;
+        document.getElementById("profile-email").innerText = savedEmail || "";
+        document.getElementById("btn-profile").classList.remove("hidden");
+        document.getElementById("login-section").classList.add("hidden");
+        document.getElementById("cart-section").classList.remove("hidden");
+        const logoutBtn = document.getElementById("btn-logout");
+        if (logoutBtn) logoutBtn.classList.remove("hidden");
+    }
+}
+checkLoginState();
 loadProducts();

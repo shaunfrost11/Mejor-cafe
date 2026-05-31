@@ -184,6 +184,10 @@ button {
     border-radius: 4px;
     margin-left: 10px;
 }
+#btn-logout{
+    background-color: #d9534f;
+     color: white;
+}
 
 #btn-profile:hover, #btn-menu:hover {
     background: #c0a080;
