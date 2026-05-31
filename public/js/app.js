@@ -171,6 +171,7 @@ function addToCart(id, name, price) {
     updateCartUI();
 }
 
+// --- UPDATED: Save cart to localStorage every time it updates ---
 function updateCartUI() {
     const cartContainer = document.getElementById("cart-items");
     const cartCount = document.getElementById("cart-count");
@@ -196,8 +197,32 @@ function updateCartUI() {
     
     document.getElementById("cart-total").innerText = total.toFixed(2);
     cartCount.innerText = totalItems;
+
+    // NEW: Save the cart to local storage so it survives a refresh
+    localStorage.setItem("cart", JSON.stringify(cart));
 }
 
+// --- UPDATED: Clear the cart from storage when logging out ---
+function logout() {
+    token = null;
+    localStorage.removeItem("token");
+    localStorage.removeItem("email");
+    localStorage.removeItem("cart"); // NEW: Clear saved cart
+    cart = [];
+    updateCartUI();
+
+    document.getElementById("profile-email").innerText = "";
+    document.getElementById("btn-profile").classList.add("hidden");
+    document.getElementById("cart-section").classList.add("hidden");
+    document.getElementById("login-section").classList.remove("hidden");
+    
+    const logoutBtn = document.getElementById("btn-logout");
+    if (logoutBtn) logoutBtn.classList.add("hidden");
+
+    viewMenu(); 
+}
+
+// --- UPDATED: Clear cart from storage after successful checkout ---
 async function checkout() {
     if (cart.length === 0) return alert("Your tray is empty!");
 
@@ -218,12 +243,45 @@ async function checkout() {
         if (response.ok) {
             document.getElementById("checkout-message").innerHTML = `<span style="color: #6B8E23; font-weight:bold;">Success! Order ID: ${data.order_id}</span>`;
             cart = []; 
+            localStorage.removeItem("cart"); // NEW: Clear saved cart
             updateCartUI();
         } else {
             document.getElementById("checkout-message").innerHTML = `<span style="color: red;">Error: ${data.detail}</span>`;
         }
     } catch (error) {
         console.error("Checkout failed", error);
+    }
+}
+
+// --- UPDATED: Bulletproof refresh handling ---
+function checkLoginState() {
+    const savedToken = localStorage.getItem("token");
+    const savedEmail = localStorage.getItem("email");
+    const savedCart = localStorage.getItem("cart"); // NEW: Get saved cart
+    
+    console.log("Checking login state on page load... Token found:", !!savedToken);
+
+    if (savedToken) {
+        token = savedToken;
+        document.getElementById("profile-email").innerText = savedEmail || "";
+        
+        // Show logged-in UI
+        document.getElementById("btn-profile").classList.remove("hidden");
+        document.getElementById("cart-section").classList.remove("hidden");
+        
+        const logoutBtn = document.getElementById("btn-logout");
+        if (logoutBtn) logoutBtn.classList.remove("hidden");
+
+        // Hide BOTH auth sections
+        document.getElementById("login-section").classList.add("hidden");
+        const signupSection = document.getElementById("signup-section");
+        if (signupSection) signupSection.classList.add("hidden");
+
+        // NEW: Restore the cart if it exists
+        if (savedCart) {
+            cart = JSON.parse(savedCart);
+            updateCartUI();
+        }
     }
 }
 
@@ -279,24 +337,3 @@ function renderOrders(orders) {
     `).join('');
 }
 
-// Start
-function checkLoginState() {
-    const savedToken = localStorage.getItem("token");
-    const savedEmail = localStorage.getItem("email");
-    
-    console.log("Checking login state on page load... Token found:", !!savedToken);
-
-    if (savedToken) {
-        token = savedToken;
-        document.getElementById("profile-email").innerText = savedEmail || "";
-        document.getElementById("btn-profile").classList.remove("hidden");
-        document.getElementById("login-section").classList.add("hidden");
-        document.getElementById("cart-section").classList.remove("hidden");
-        const logoutBtn = document.getElementById("btn-logout");
-        if (logoutBtn) logoutBtn.classList.remove("hidden");
-    }
-}
-document.addEventListener("DOMContentLoaded", () => {
-    checkLoginState();
-    loadProducts();
-});
