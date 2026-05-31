@@ -1,9 +1,153 @@
-const API_URL = "https://mejor-cafe.onrender.com";
+const API_URL = "https://mejor-cafe.onrender.com"; // Change to http://127.0.0.1:8000 if testing locally
 let cart = [];
 let token = null;
 let allProducts = []; 
 
-// --- 1. PRODUCT LOGIC ---
+// --- 1. INITIALIZATION ---
+document.addEventListener("DOMContentLoaded", () => {
+    checkLoginState();
+    loadProducts();
+});
+
+// --- 2. AUTHENTICATION & UI STATE LOGIC ---
+function checkLoginState() {
+    const savedToken = localStorage.getItem("token");
+    const savedEmail = localStorage.getItem("email");
+    const savedCart = localStorage.getItem("cart");
+
+    if (savedToken) {
+        // User IS logged in
+        token = savedToken;
+        
+        // Hide Authentication Forms entirely
+        document.getElementById("auth-container").classList.add("hidden");
+
+        // Show Logged-In Controls
+        document.getElementById("btn-profile").classList.remove("hidden");
+        document.getElementById("btn-logout").classList.remove("hidden");
+        document.getElementById("cart-section").classList.remove("hidden");
+        document.getElementById("product-list").classList.remove("hidden");
+        
+        // Populate Profile Info
+        document.getElementById("profile-email").innerText = savedEmail || "";
+
+        // Restore Cart from Memory
+        if (savedCart) {
+            try {
+                cart = JSON.parse(savedCart);
+            } catch (e) {
+                cart = [];
+            }
+        }
+        updateCartUI();
+    } else {
+        // User is NOT logged in
+        document.getElementById("auth-container").classList.remove("hidden");
+        document.getElementById("login-section").classList.remove("hidden");
+        document.getElementById("signup-section").classList.add("hidden");
+        
+        document.getElementById("btn-profile").classList.add("hidden");
+        document.getElementById("btn-logout").classList.add("hidden");
+        document.getElementById("cart-section").classList.add("hidden");
+        document.getElementById("profile-section").classList.add("hidden");
+    }
+}
+
+async function login() {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+    const errorText = document.getElementById("login-error");
+    
+    const formData = new URLSearchParams();
+    formData.append("username", email); 
+    formData.append("password", password);
+
+    try {
+        const response = await fetch(`${API_URL}/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: formData
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            
+            // Save to memory
+            localStorage.setItem("token", data.access_token);
+            localStorage.setItem("email", email);
+            
+            // Trigger the UI update!
+            checkLoginState(); 
+        } else {
+            errorText.innerText = "Invalid credentials!";
+        }
+    } catch (error) {
+        errorText.innerText = "Cannot connect to server.";
+    }
+}
+
+function logout() {
+    // 1. Wipe Memory
+    token = null;
+    cart = [];
+    localStorage.removeItem("token");
+    localStorage.removeItem("email");
+    localStorage.removeItem("cart");
+
+    // 2. Reset UI by checking login state again
+    checkLoginState();
+    
+    // 3. Ensure we are looking at the menu, not a blank profile screen
+    viewMenu();
+}
+
+function toggleAuthMode(mode) {
+    const loginSection = document.getElementById("login-section");
+    const signupSection = document.getElementById("signup-section");
+    document.getElementById("login-error").innerText = ""; 
+
+    if (mode === 'signup') {
+        loginSection.classList.add("hidden");
+        signupSection.classList.remove("hidden");
+    } else {
+        signupSection.classList.add("hidden");
+        loginSection.classList.remove("hidden");
+    }
+}
+
+async function register() {
+    const email = document.getElementById("signup-email").value;
+    const password = document.getElementById("signup-password").value;
+    const fullName = document.getElementById("signup-fullname").value;
+
+    const payload = {
+        email: email,
+        password: password,
+        full_name: fullName,
+        role: "customer" 
+    };
+
+    try {
+        const response = await fetch(`${API_URL}/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            alert("Account created successfully! Please log in.");
+            toggleAuthMode('login');
+        } else {
+            alert(data.detail || "Registration failed.");
+        }
+    } catch (error) {
+        alert("Cannot connect to server.");
+    }
+}
+
+// --- 3. PRODUCT & VIEW LOGIC ---
 async function loadProducts() {
     try {
         const response = await fetch(`${API_URL}/products`);
@@ -20,7 +164,7 @@ function renderProducts(productsToDraw) {
     productContainer.innerHTML = ""; 
     
     if (productsToDraw.length === 0) {
-        productContainer.innerHTML = "<p class='empty-cart-msg' style='grid-column: 1 / -1;'>No items found matching your search.</p>";
+        productContainer.innerHTML = "<p class='empty-cart-msg' style='grid-column: 1 / -1;'>No items found.</p>";
         return;
     }
 
@@ -51,111 +195,60 @@ function filterMenu() {
     renderProducts(filtered);
 }
 
-// --- 2. AUTHENTICATION LOGIC (LOGIN & SIGNUP) ---
-
-function toggleAuthMode(mode) {
-    const loginSection = document.getElementById("login-section");
-    const signupSection = document.getElementById("signup-section");
-    const errorMsg = document.getElementById("login-error");
+function viewMenu() {
+    document.getElementById("profile-section").classList.add("hidden");
+    document.getElementById("btn-menu").classList.add("hidden");
     
-    if (errorMsg) errorMsg.innerText = ""; 
-
-    if (mode === 'signup') {
-        loginSection.classList.add("hidden");
-        signupSection.classList.remove("hidden");
-    } else {
-        signupSection.classList.add("hidden");
-        loginSection.classList.remove("hidden");
-    }
-}
-async function register() {
-    const email = document.getElementById("signup-email").value;
-    const password = document.getElementById("signup-password").value;
-    const fullName = document.getElementById("signup-fullname").value;
-
-    const payload = {
-        email: email,
-        password: password,
-        full_name: fullName,
-        role: "customer" // Matches your backend requirement
-    };
-
-    try {
-        const response = await fetch(`${API_URL}/register`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            alert("Account created successfully! Please log in.");
-            toggleAuthMode('login');
-        } else {
-            document.getElementById("login-error").innerText = data.detail || "Registration failed.";
-        }
-    } catch (error) {
-        document.getElementById("login-error").innerText = "Cannot connect to server.";
-    }
+    document.getElementById("product-list").classList.remove("hidden");
+    if(token) document.getElementById("btn-profile").classList.remove("hidden");
 }
 
-async function login() {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
+async function viewProfile() {
+    document.getElementById("product-list").classList.add("hidden");
+    document.getElementById("btn-profile").classList.add("hidden");
     
-    const formData = new URLSearchParams();
-    formData.append("username", email); // OAuth2 format uses 'username'
-    formData.append("password", password);
+    document.getElementById("profile-section").classList.remove("hidden");
+    document.getElementById("btn-menu").classList.remove("hidden");
 
     try {
-        const response = await fetch(`${API_URL}/login`, {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: formData
+        const response = await fetch(`${API_URL}/my-orders`, {
+            method: "GET",
+            headers: { "Authorization": `Bearer ${token}` } 
         });
 
         if (response.ok) {
             const data = await response.json();
-            token = data.access_token;
-            localStorage.setItem("token", token);
-            localStorage.setItem("email", email);
-            
-            console.log("Login successful, token saved to localStorage.");
-            
-            document.getElementById("profile-email").innerText = email; 
-            document.getElementById("btn-profile").classList.remove("hidden"); 
-            document.getElementById("login-section").classList.add("hidden");
-            document.getElementById("cart-section").classList.remove("hidden");
-            const logoutBtn = document.getElementById("btn-logout");
-            if (logoutBtn) logoutBtn.classList.remove("hidden");
+            renderOrders(data.my_orders);
         } else {
-            document.getElementById("login-error").innerText = "Invalid credentials!";
+            document.getElementById("order-history-list").innerHTML = "<p style='color:red;'>Session expired. Please log out and log in again.</p>";
         }
     } catch (error) {
-        document.getElementById("login-error").innerText = "Cannot connect to server.";
+        console.error("Failed to fetch orders", error);
     }
 }
 
-function logout() {
-    token = null;
-    localStorage.removeItem("token");
-    localStorage.removeItem("email");
-    cart = [];
-    updateCartUI();
+function renderOrders(orders) {
+    const container = document.getElementById("order-history-list");
+    if (orders.length === 0) {
+        container.innerHTML = "<p class='empty-cart-msg'>You haven't placed any orders yet.</p>";
+        return;
+    }
 
-    document.getElementById("profile-email").innerText = "";
-    document.getElementById("btn-profile").classList.add("hidden");
-    document.getElementById("cart-section").classList.add("hidden");
-    document.getElementById("login-section").classList.remove("hidden");
-    
-    const logoutBtn = document.getElementById("btn-logout");
-    if (logoutBtn) logoutBtn.classList.add("hidden");
-
-    viewMenu(); // Make sure they are brought back to the menu view
+    container.innerHTML = orders.map(order => `
+        <div class="order-card">
+            <div class="order-header">
+                <strong>Order #${order.order_id.substring(0,8)}...</strong>
+                <span class="order-date">${new Date(order.created_at).toLocaleDateString()}</span>
+            </div>
+            <div class="order-details">
+                <p>Status: <span style="text-transform: capitalize; font-weight: bold;">${order.status}</span></p>
+                <p>Total: <strong>$${Number(order.total_amount).toFixed(2)}</strong></p>
+            </div>
+        </div>
+    `).join('');
 }
 
-// --- 3. CART & CHECKOUT LOGIC ---
+// --- 4. CART & CHECKOUT LOGIC ---
 function addToCart(id, name, price) {
     if (!token) {
         alert("Please log in to start adding items to your tray!");
@@ -171,7 +264,6 @@ function addToCart(id, name, price) {
     updateCartUI();
 }
 
-// --- UPDATED: Save cart to localStorage every time it updates ---
 function updateCartUI() {
     const cartContainer = document.getElementById("cart-items");
     const cartCount = document.getElementById("cart-count");
@@ -198,11 +290,12 @@ function updateCartUI() {
     document.getElementById("cart-total").innerText = total.toFixed(2);
     cartCount.innerText = totalItems;
 
-    // NEW: Save the cart to local storage so it survives a refresh
-    localStorage.setItem("cart", JSON.stringify(cart));
+    // Save cart to local storage immediately
+    if (token) {
+        localStorage.setItem("cart", JSON.stringify(cart));
+    }
 }
 
-// --- UPDATED: Clear cart from storage after successful checkout ---
 async function checkout() {
     if (cart.length === 0) return alert("Your tray is empty!");
 
@@ -221,9 +314,9 @@ async function checkout() {
         const data = await response.json();
 
         if (response.ok) {
-            document.getElementById("checkout-message").innerHTML = `<span style="color: #6B8E23; font-weight:bold;">Success! Order ID: ${data.order_id}</span>`;
+            document.getElementById("checkout-message").innerHTML = `<span style="color: #6B8E23; font-weight:bold;">Success! Order ID: ${data.order_id.substring(0,8)}</span>`;
             cart = []; 
-            localStorage.removeItem("cart"); // NEW: Clear saved cart
+            localStorage.removeItem("cart"); 
             updateCartUI();
         } else {
             document.getElementById("checkout-message").innerHTML = `<span style="color: red;">Error: ${data.detail}</span>`;
@@ -232,126 +325,3 @@ async function checkout() {
         console.error("Checkout failed", error);
     }
 }
-
-// --- UPDATED: Bulletproof refresh handling ---
-// --- BULLETPROOF LOGIN STATE CHECK ---
-function checkLoginState() {
-    const savedToken = localStorage.getItem("token");
-    const savedEmail = localStorage.getItem("email");
-    const savedCart = localStorage.getItem("cart");
-
-    if (savedToken) {
-        token = savedToken;
-        
-        // 1. Force hide all authentication sections
-        const loginSection = document.getElementById("login-section");
-        const signupSection = document.getElementById("signup-section");
-        if (loginSection) loginSection.classList.add("hidden");
-        if (signupSection) signupSection.classList.add("hidden");
-
-        // 2. Force show the main store view and user controls
-        const productList = document.getElementById("product-list");
-        const cartSection = document.getElementById("cart-section");
-        const btnProfile = document.getElementById("btn-profile");
-        const btnLogout = document.getElementById("btn-logout");
-        
-        if (productList) productList.classList.remove("hidden");
-        if (cartSection) cartSection.classList.remove("hidden");
-        if (btnProfile) btnProfile.classList.remove("hidden");
-        if (btnLogout) btnLogout.classList.remove("hidden");
-
-        // 3. Restore user data
-        const profileEmail = document.getElementById("profile-email");
-        if (profileEmail) profileEmail.innerText = savedEmail || "";
-
-        // 4. Restore Cart
-        if (savedCart) {
-            cart = JSON.parse(savedCart);
-            updateCartUI();
-        }
-    }
-}
-
-// --- BULLETPROOF LOGOUT FUNCTION ---
-function logout() {
-    // 1. Clear memory and storage
-    token = null;
-    localStorage.removeItem("token");
-    localStorage.removeItem("email");
-    localStorage.removeItem("cart"); 
-    cart = [];
-    updateCartUI();
-
-    // 2. Hide logged-in UI elements
-    const btnProfile = document.getElementById("btn-profile");
-    const cartSection = document.getElementById("cart-section");
-    const btnLogout = document.getElementById("btn-logout");
-    const profileEmail = document.getElementById("profile-email");
-    const profileSection = document.getElementById("profile-section");
-    
-    if (btnProfile) btnProfile.classList.add("hidden");
-    if (cartSection) cartSection.classList.add("hidden");
-    if (btnLogout) btnLogout.classList.add("hidden");
-    if (profileSection) profileSection.classList.add("hidden");
-    if (profileEmail) profileEmail.innerText = "";
-
-    // 3. Show login view
-    const loginSection = document.getElementById("login-section");
-    const productList = document.getElementById("product-list");
-    
-    if (loginSection) loginSection.classList.remove("hidden");
-    if (productList) productList.classList.remove("hidden"); // Optional: keep menu visible behind login
-}
-
-// --- 4. VIEW LOGIC ---
-function viewMenu() {
-    document.getElementById("profile-section").classList.add("hidden");
-    document.getElementById("btn-menu").classList.add("hidden");
-    document.getElementById("product-list").classList.remove("hidden");
-    document.getElementById("btn-profile").classList.remove("hidden");
-}
-
-async function viewProfile() {
-    document.getElementById("product-list").classList.add("hidden");
-    document.getElementById("btn-profile").classList.add("hidden");
-    document.getElementById("profile-section").classList.remove("hidden");
-    document.getElementById("btn-menu").classList.remove("hidden");
-
-    try {
-        const response = await fetch(`${API_URL}/my-orders`, {
-            method: "GET",
-            headers: { "Authorization": `Bearer ${token}` } 
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            renderOrders(data.my_orders);
-        } else {
-            document.getElementById("order-history-list").innerHTML = "<p style='color:red;'>Session expired. Please log in again.</p>";
-        }
-    } catch (error) {
-        console.error("Failed to fetch orders", error);
-    }
-}
-
-function renderOrders(orders) {
-    const container = document.getElementById("order-history-list");
-    if (orders.length === 0) {
-        container.innerHTML = "<p class='empty-cart-msg'>You haven't placed any orders yet.</p>";
-        return;
-    }
-
-    container.innerHTML = orders.map(order => `
-        <div class="order-card">
-            <div class="order-header">
-                <strong>Order #${order.order_id}</strong>
-                <span class="order-date">${new Date(order.created_at).toLocaleDateString()}</span>
-            </div>
-            <div class="order-details">
-                <p>Status: <span style="text-transform: capitalize; font-weight: bold;">${order.status}</span></p>
-                <p>Total: <strong>$${Number(order.total_amount).toFixed(2)}</strong></p>
-            </div>
-        </div>
-    `).join('');
-}
-
