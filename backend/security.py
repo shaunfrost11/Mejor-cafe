@@ -3,7 +3,7 @@ import jwt
 from passlib.context import CryptContext
 
 # In a real production app, this key is hidden in a .env file!
-SECRET_KEY = "your-super-secret-ecommerce-key"
+SECRET_KEY = "my-super-secret-ecommerce-key_1234567889"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 120 # Tokens expire after 2 hours for security
 
