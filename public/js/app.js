@@ -1,3 +1,5 @@
+console.log("HELLO FROM APP.JS! THE FILE IS CONNECTED!");
+
 const API_URL = "https://mejor-cafe.onrender.com"; // Change to http://127.0.0.1:8000 if testing locally
 let cart = [];
 let token = null;
