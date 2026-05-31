@@ -202,26 +202,6 @@ function updateCartUI() {
     localStorage.setItem("cart", JSON.stringify(cart));
 }
 
-// --- UPDATED: Clear the cart from storage when logging out ---
-function logout() {
-    token = null;
-    localStorage.removeItem("token");
-    localStorage.removeItem("email");
-    localStorage.removeItem("cart"); // NEW: Clear saved cart
-    cart = [];
-    updateCartUI();
-
-    document.getElementById("profile-email").innerText = "";
-    document.getElementById("btn-profile").classList.add("hidden");
-    document.getElementById("cart-section").classList.add("hidden");
-    document.getElementById("login-section").classList.remove("hidden");
-    
-    const logoutBtn = document.getElementById("btn-logout");
-    if (logoutBtn) logoutBtn.classList.add("hidden");
-
-    viewMenu(); 
-}
-
 // --- UPDATED: Clear cart from storage after successful checkout ---
 async function checkout() {
     if (cart.length === 0) return alert("Your tray is empty!");
@@ -254,35 +234,73 @@ async function checkout() {
 }
 
 // --- UPDATED: Bulletproof refresh handling ---
+// --- BULLETPROOF LOGIN STATE CHECK ---
 function checkLoginState() {
     const savedToken = localStorage.getItem("token");
     const savedEmail = localStorage.getItem("email");
-    const savedCart = localStorage.getItem("cart"); // NEW: Get saved cart
-    
-    console.log("Checking login state on page load... Token found:", !!savedToken);
+    const savedCart = localStorage.getItem("cart");
 
     if (savedToken) {
         token = savedToken;
-        document.getElementById("profile-email").innerText = savedEmail || "";
         
-        // Show logged-in UI
-        document.getElementById("btn-profile").classList.remove("hidden");
-        document.getElementById("cart-section").classList.remove("hidden");
-        
-        const logoutBtn = document.getElementById("btn-logout");
-        if (logoutBtn) logoutBtn.classList.remove("hidden");
-
-        // Hide BOTH auth sections
-        document.getElementById("login-section").classList.add("hidden");
+        // 1. Force hide all authentication sections
+        const loginSection = document.getElementById("login-section");
         const signupSection = document.getElementById("signup-section");
+        if (loginSection) loginSection.classList.add("hidden");
         if (signupSection) signupSection.classList.add("hidden");
 
-        // NEW: Restore the cart if it exists
+        // 2. Force show the main store view and user controls
+        const productList = document.getElementById("product-list");
+        const cartSection = document.getElementById("cart-section");
+        const btnProfile = document.getElementById("btn-profile");
+        const btnLogout = document.getElementById("btn-logout");
+        
+        if (productList) productList.classList.remove("hidden");
+        if (cartSection) cartSection.classList.remove("hidden");
+        if (btnProfile) btnProfile.classList.remove("hidden");
+        if (btnLogout) btnLogout.classList.remove("hidden");
+
+        // 3. Restore user data
+        const profileEmail = document.getElementById("profile-email");
+        if (profileEmail) profileEmail.innerText = savedEmail || "";
+
+        // 4. Restore Cart
         if (savedCart) {
             cart = JSON.parse(savedCart);
             updateCartUI();
         }
     }
+}
+
+// --- BULLETPROOF LOGOUT FUNCTION ---
+function logout() {
+    // 1. Clear memory and storage
+    token = null;
+    localStorage.removeItem("token");
+    localStorage.removeItem("email");
+    localStorage.removeItem("cart"); 
+    cart = [];
+    updateCartUI();
+
+    // 2. Hide logged-in UI elements
+    const btnProfile = document.getElementById("btn-profile");
+    const cartSection = document.getElementById("cart-section");
+    const btnLogout = document.getElementById("btn-logout");
+    const profileEmail = document.getElementById("profile-email");
+    const profileSection = document.getElementById("profile-section");
+    
+    if (btnProfile) btnProfile.classList.add("hidden");
+    if (cartSection) cartSection.classList.add("hidden");
+    if (btnLogout) btnLogout.classList.add("hidden");
+    if (profileSection) profileSection.classList.add("hidden");
+    if (profileEmail) profileEmail.innerText = "";
+
+    // 3. Show login view
+    const loginSection = document.getElementById("login-section");
+    const productList = document.getElementById("product-list");
+    
+    if (loginSection) loginSection.classList.remove("hidden");
+    if (productList) productList.classList.remove("hidden"); // Optional: keep menu visible behind login
 }
 
 // --- 4. VIEW LOGIC ---
