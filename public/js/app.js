@@ -121,6 +121,8 @@ async function login() {
             localStorage.setItem("token", token);
             localStorage.setItem("email", email);
             
+            console.log("Login successful, token saved to localStorage.");
+            
             document.getElementById("profile-email").innerText = email; 
             document.getElementById("btn-profile").classList.remove("hidden"); 
             document.getElementById("login-section").classList.add("hidden");
@@ -282,6 +284,8 @@ function checkLoginState() {
     const savedToken = localStorage.getItem("token");
     const savedEmail = localStorage.getItem("email");
     
+    console.log("Checking login state on page load... Token found:", !!savedToken);
+
     if (savedToken) {
         token = savedToken;
         document.getElementById("profile-email").innerText = savedEmail || "";
@@ -292,5 +296,7 @@ function checkLoginState() {
         if (logoutBtn) logoutBtn.classList.remove("hidden");
     }
 }
-checkLoginState();
-loadProducts();
+document.addEventListener("DOMContentLoaded", () => {
+    checkLoginState();
+    loadProducts();
+});
