@@ -11,45 +11,72 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // --- 2. AUTHENTICATION & UI STATE LOGIC ---
 function checkLoginState() {
+    console.log("--- 1. checkLoginState started ---");
+    
     const savedToken = localStorage.getItem("token");
     const savedEmail = localStorage.getItem("email");
     const savedCart = localStorage.getItem("cart");
+    
+    console.log("--- 2. Storage Check | Token exists:", !!savedToken, "| Email:", savedEmail, "---");
 
     if (savedToken) {
-        // User IS logged in
         token = savedToken;
-        
-        // Hide Authentication Forms entirely
-        document.getElementById("auth-container").classList.add("hidden");
+        console.log("--- 3. User is logged in. Updating UI... ---");
 
-        // Show Logged-In Controls
-        document.getElementById("btn-profile").classList.remove("hidden");
-        document.getElementById("btn-logout").classList.remove("hidden");
-        document.getElementById("cart-section").classList.remove("hidden");
-        document.getElementById("product-list").classList.remove("hidden");
-        
-        // Populate Profile Info
-        document.getElementById("profile-email").innerText = savedEmail || "";
+        try {
+            // Helper functions that PREVENT crashes if an HTML element is missing
+            const hideElement = (id) => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add("hidden");
+                else console.warn(`⚠️ Warning: Could not find HTML element to hide: '${id}'`);
+            };
+            
+            const showElement = (id) => {
+                const el = document.getElementById(id);
+                if (el) el.classList.remove("hidden");
+                else console.warn(`⚠️ Warning: Could not find HTML element to show: '${id}'`);
+            };
 
-        // Restore Cart from Memory
-        if (savedCart) {
-            try {
-                cart = JSON.parse(savedCart);
-            } catch (e) {
-                cart = [];
+            // 1. Hide Auth Sections
+            hideElement("auth-container");
+            hideElement("login-section");
+            hideElement("signup-section");
+            hideElement("profile-section");
+
+            // 2. Show App Sections
+            showElement("product-list");
+            showElement("cart-section");
+            showElement("btn-profile");
+            showElement("btn-logout"); // The stubborn logout button!
+
+            // 3. Set Email text
+            const emailText = document.getElementById("profile-email");
+            if (emailText) emailText.innerText = savedEmail || "";
+            else console.warn("⚠️ Warning: Could not find 'profile-email' to set text.");
+
+            console.log("--- 4. UI successfully updated! Restoring cart... ---");
+
+            // 4. Restore Cart safely
+            if (savedCart) {
+                try {
+                    cart = JSON.parse(savedCart);
+                    updateCartUI();
+                    console.log("--- 5. Cart restored successfully. ---");
+                } catch (e) {
+                    console.error("❌ Cart parsing failed:", e);
+                    cart = [];
+                }
             }
+        } catch (error) {
+            console.error("❌ CRASH inside checkLoginState:", error);
         }
-        updateCartUI();
     } else {
-        // User is NOT logged in
-        document.getElementById("auth-container").classList.remove("hidden");
-        document.getElementById("login-section").classList.remove("hidden");
-        document.getElementById("signup-section").classList.add("hidden");
-        
-        document.getElementById("btn-profile").classList.add("hidden");
-        document.getElementById("btn-logout").classList.add("hidden");
-        document.getElementById("cart-section").classList.add("hidden");
-        document.getElementById("profile-section").classList.add("hidden");
+        console.log("--- 3. No token found. User is logged out. ---");
+        // Ensure logged-out UI is visible
+        const loginSection = document.getElementById("login-section");
+        const authContainer = document.getElementById("auth-container");
+        if (loginSection) loginSection.classList.remove("hidden");
+        if (authContainer) authContainer.classList.remove("hidden");
     }
 }
 
